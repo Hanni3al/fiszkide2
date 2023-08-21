@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Deutsch A1/A2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-image: url('https://www.tabletowo.pl/wp-content/uploads/2022/08/duolingo-grafika.jpg'); /* Zmień na ścieżkę do lokalnego pliku lub na swoim serwerze */
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        .container {
+            border: 2px solid #fff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 0 auto;
+            max-width: 300px;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #fff;
+        }
+
+        #word {
+            font-size: 24px;
+            color: #333;
+        }
+
+        #translation {
+            padding: 5px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px; /* Przycisk teraz niżej od pola wprowadzania tłumaczenia */
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        #message {
+            color: #900;
+        }
+
+        .word-background {
+            background-color: #f0f0f0;
+        }
+
+        #results-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .special-characters {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .special-characters button {
+            margin: 5px;
+            padding: 5px 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        .special-characters button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quiz Deutsch A1/A2</h1>
+    <div class="container">
+        <label for="category">Wybierz kategorię:</label>
+        <select id="category" onchange="changeCategory()">
+            <option value="all">Wszystkie</option>
+            <option value="Przedmioty">Przedmioty</option>
+            <option value="Czasowniki">Czasowniki</option>
+            <option value="Przymiotniki">Przymiotniki</option>
+            <option value="Spójniki">Spójniki</option>
+            <option value="Zdania">Zdania</option>
+        </select>
+        <p>Tłumacz słowo po polsku na niemiecki:</p>
+        <div id="word">Dom</div>
+        <input type="text" id="translation" placeholder="Wpisz tłumaczenie" onkeypress="checkEnter(event)">
+        <button onclick="checkTranslation()">Sprawdź</button>
+        <p id="message"></p>
+
+        <div class="special-characters">
+            <button onclick="addSpecialCharacter('ä')">ä</button>
+            <button onclick="addSpecialCharacter('Ä')">Ä</button>
+            <button onclick="addSpecialCharacter('ö')">ö</button>
+            <button onclick="addSpecialCharacter('Ö')">Ö</button>
+            <button onclick="addSpecialCharacter('ü')">ü</button>
+            <button onclick="addSpecialCharacter('Ü')">Ü</button>
+            <button onclick="addSpecialCharacter('ß')">ß</button>
+        </div>
+
+        <div id="results-modal">
+            <div class="modal-content">
+                <h2>Dziękujemy za grę!</h2>
+                <p>Czy chcesz zagrać ponownie?</p>
+                <button onclick="resetGame()">Tak, zagram jeszcze raz</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const categories = {
+            all: [
+                { polish: "Dom", german: "das Haus" },
+                { polish: "Zegar", german: "die Uhr" },
+		    { polish: "Dom", german: "das Haus" },
+    { polish: "Zegar", german: "die Uhr" },
+    { polish: "Mleko", german: "die Milch" },
+    { polish: "Chleb", german: "das Brot" },
+    { polish: "Telefon", german: "das Telefon" },
+    { polish: "Telewizor", german: "der Fernseher" },
+    { polish: "Książka", german: "das Buch" },
+    { polish: "Biurowy", german: "büro" },
+    { polish: "Kwiat", german: "die Blume" },
+    { polish: "Miłość", german: "die Liebe" },
+    { polish: "Noga", german: "das Bein" },
+    { polish: "Ręka", german: "die Hand" },
+    { polish: "Klucz", german: "der Schlüssel" },
+    { polish: "Drzwi", german: "die Tür" },
+    { polish: "Okno", german: "das Fenster" },
+    { polish: "Samochód", german: "das Auto" },
+    { polish: "Zegar", german: "die Uhr" },
+    { polish: "Lampa", german: "die Lampe" },
+    { polish: "Stół", german: "der Tisch" },
+    { polish: "Krzesło", german: "der Stuhl" },
+    { polish: "Rower", german: "das Fahrrad" },
+    { polish: "Pies", german: "der Hund" },
+    { polish: "Kot", german: "die Katze" },
+    { polish: "Ptak", german: "der Vogel" },
+    { polish: "Ryba", german: "der Fisch" },
+    { polish: "Pomidor", german: "die Tomate" },
+    { polish: "Marchewka", german: "die Karotte" },
+    { polish: "Zupa", german: "die Suppe" },
+    { polish: "Kawa", german: "der Kaffee" },
+    { polish: "Herbata", german: "der Tee" },
+    { polish: "Dzień", german: "der Tag" },
+    { polish: "Noc", german: "die Nacht" },
+    { polish: "Tydzień", german: "die Woche" },
+    { polish: "Miesiąc", german: "der Monat" },
+    { polish: "Rok", german: "das Jahr" },
+    { polish: "Lato", german: "der Sommer" },
+    { polish: "Zima", german: "der Winter" },
+    { polish: "Wiosna", german: "der Frühling" },
+    { polish: "Jesień", german: "der Herbst" },
+    { polish: "Przyjaciel", german: "der Freund" },
+    { polish: "Przyjaciółka", german: "die Freundin" },
+    { polish: "Rodzina", german: "die Familie" },
+    { polish: "Matka", german: "die Mutter" },
+    { polish: "Ojciec", german: "der Vater" },
+    { polish: "Syn", german: "der Sohn" },
+    { polish: "Córka", german: "die Tochter" },
+    { polish: "Siostra", german: "die Schwester" },
+    { polish: "Brat", german: "der Bruder" },
+    { polish: "Dziadek", german: "der Großvater" },
+    { polish: "Babcia", german: "die Großmutter" },
+    { polish: "Kuchnia", german: "die Küche" },
+    { polish: "Łazienka", german: "das Badezimmer" },
+    { polish: "Sypialnia", german: "das Schlafzimmer" },
+    { polish: "Salon", german: "das Wohnzimmer" },
+    { polish: "Pokój", german: "das Zimmer" },
+    { polish: "Papier", german: "das Papier" },
+    { polish: "Książka", german: "das Buch" },
+    { polish: "Telefon", german: "das Telefon" },
+    { polish: "Komputer", german: "der Computer" },
+    { polish: "Samolot", german: "das Flugzeug" },
+    { polish: "Pociąg", german: "der Zug" },
+    { polish: "Auto", german: "das Auto" },
+    { polish: "Rowerek", german: "das Fahrrad" },
+    { polish: "Okulary", german: "die Brille" },
+    { polish: "Buty", german: "die Schuhe" },
+    { polish: "Koszulka", german: "das T-Shirt" },
+    { polish: "Sukienka", german: "das Kleid" },
+    { polish: "Spodnie", german: "die Hose" },
+    { polish: "Skarpetki", german: "die Socken" },
+    { polish: "Kapelusz", german: "der Hut" },
+    { polish: "Portfel", german: "die Brieftasche" },
+    { polish: "Torba", german: "die Tasche" },
+    { polish: "Dom", german: "das Haus" },
+    { polish: "Mieszkanie", german: "die Wohnung" },
+    { polish: "Wieżowiec", german: "das Hochhaus" },
+    { polish: "Pensjonat", german: "die Pension" },
+    { polish: "Schody", german: "die Treppe" },
+    { polish: "Winda", german: "der Aufzug" },
+    { polish: "Garaż", german: "die Garage" },
+    { polish: "Dach", german: "das Dach" },
+    { polish: "Ściana", german: "die Wand" },
+    { polish: "Okno", german: "das Fenster" },
+    { polish: "Drzwi", german: "die Tür" },
+    { polish: "Podłoga", german: "der Boden" },
+    { polish: "Sufit", german: "die Decke" },
+    { polish: "Biurko", german: "der Schreibtisch" },
+    { polish: "Krzesło", german: "der Stuhl" },
+    { polish: "Łóżko", german: "das Bett" },
+    { polish: "Sofa", german: "das Sofa" },
+    { polish: "Telewizor", german: "der Fernseher" },
+    { polish: "Lampa", german: "die Lampe" },
+    { polish: "Zegar", german: "die Uhr" },
+    { polish: "Telefon", german: "das Telefon" },
+    { polish: "Klawiatura", german: "die Tastatur" },
+    { polish: "Monitor", german: "der Bildschirm" },
+    { polish: "Myszka", german: "die Maus" },
+    { polish: "Głośniki", german: "die Lautsprecher" },
+    { polish: "Bateria", german: "die Batterie" },
+    { polish: "Kabel", german: "das Kabel" },
+    { polish: "Gniazdko", german: "die Steckdose" },
+    { polish: "Przedłużacz", german: "die Verlängerung" },
+    { polish: "Woda", german: "das Wasser" },
+    { polish: "Sok", german: "der Saft" },
+    { polish: "Kawa", german: "der Kaffee" },
+    { polish: "Herbata", german: "der Tee" },
+    { polish: "Mleko", german: "die Milch" },
+    { polish: "Piwo", german: "das Bier" },
+    { polish: "Wino", german: "der Wein" },
+    { polish: "Sól", german: "das Salz" },
+    { polish: "Cukier", german: "der Zucker" },
+    { polish: "Chleb", german: "das Brot" },
+    { polish: "Masło", german: "die Butter" },
+    { polish: "Ser", german: "der Käse" },
+    { polish: "Jajko", german: "das Ei" },
+    { polish: "Kurczak", german: "das Hähnchen" },
+    { polish: "Wołowina", german: "das Rindfleisch" },
+    { polish: "Wieprzowina", german: "das Schweinefleisch" },
+    { polish: "Ryż", german: "der Reis" },
+    { polish: "Makaron", german: "die Nudeln" },
+    { polish: "Ziemniaki", german: "die Kartoffeln" },
+    { polish: "Marchewka", german: "die Karotte" },
+    { polish: "Pomidor", german: "die Tomate" },
+    { polish: "Ogórek", german: "die Gurke" },
+    { polish: "Cebula", german: "die Zwiebel" },
+    { polish: "Czosnek", german: "der Knoblauch" },
+    { polish: "Papryka", german: "die Paprika" },
+    { polish: "Jabłko", german: "der Apfel" },
+    { polish: "Gruszka", german: "die Birne" },
+    { polish: "Banany", german: "die Bananen" },
+    { polish: "Truskawki", german: "die Erdbeeren" },
+    { polish: "Jagody", german: "die Beeren" },
+    { polish: "Cytryna", german: "die Zitrone" },
+    { polish: "Pomarańcza", german: "die Orange" },
+    { polish: "Winogrona", german: "die Trauben" },
+    { polish: "Banan", german: "die Banane" },
+    { polish: "Herbata", german: "der Tee" },
+    { polish: "Kawa", german: "der Kaffee" },
+    { polish: "Czekolada", german: "die Schokolade" },
+    { polish: "Lody", german: "das Eis" },
+    { polish: "Ciasto", german: "der Kuchen" },
+    { polish: "Ciasteczka", german: "die Kekse" },
+    { polish: "Drożdżówka", german: "der Hefezopf" },
+    { polish: "Ryba", german: "der Fisch" },
+    { polish: "Kurczak", german: "das Hähnchen" },
+    { polish: "Wieprzowina", german: "das Schweinefleisch" },
+    { polish: "Wołowina", german: "das Rindfleisch" },
+    { polish: "Łosoś", german: "der Lachs" },
+    { polish: "Krewetki", german: "die Garnelen" },
+    { polish: "Tuńczyk", german: "der Thunfisch" },
+    { polish: "Oliwa", german: "das Olivenöl" },
+    { polish: "Mąka", german: "das Mehl" },
+    { polish: "Jajka", german: "die Eier" },
+    { polish: "Cukier", german: "der Zucker" },
+    { polish: "Kasza", german: "der Grieß" },
+    { polish: "Dżem", german: "die Marmelade" },
+    { polish: "Sól", german: "das Salz" },
+    { polish: "Pieprz", german: "der Pfeffer" },
+    { polish: "Oregano", german: "der Oregano" },
+    { polish: "Cynamon", german: "der Zimt" },
+    { polish: "Ketchup", german: "der Ketchup" },
+    { polish: "Majonez", german: "die Mayonnaise" },
+    { polish: "Musztarda", german: "der Senf" },
+    { polish: "Sos", german: "die Soße" },
+    { polish: "Owoce", german: "die Früchte" },
+    { polish: "Warzywa", german: "das Gemüse" },
+    { polish: "Mięso", german: "das Fleisch" },
+    { polish: "Nabiał", german: "die Milchprodukte" },
+    { polish: "Pieczywo", german: "die Backwaren" },
+    { polish: "Przyprawy", german: "die Gewürze" },
+    { polish: "Słodycze", german: "die Süßigkeiten" },
+    { polish: "Napoje", german: "die Getränke" },
+    { polish: "Chleb", german: "das Brot" },
+    { polish: "Ser", german: "der Käse" },
+    { polish: "Masło", german: "die Butter" },
+    { polish: "Jajko", german: "das Ei" },
+    { polish: "Mleko", german: "die Milch" },
+    { polish: "Cukier", german: "der Zucker" },
+    { polish: "Kawa", german: "der Kaffee" },
+    { polish: "Herbata", german: "der Tee" },
+    { polish: "Dzień", german: "der Tag" },
+    { polish: "Noc", german: "die Nacht" },
+    { polish: "Tydzień", german: "die Woche" },
+    { polish: "Miesiąc", german: "der Monat" },
+    { polish: "Rok", german: "das Jahr" },
+    { polish: "Lato", german: "der Sommer" },
+    { polish: "Zima", german: "der Winter" },
+    { polish: "Wiosna", german: "der Frühling" },
+    { polish: "Jesień", german: "der Herbst" },
+    { polish: "Przyjaciel", german: "der Freund" },
+    { polish: "Przyjaciółka", german: "die Freundin" },
+    { polish: "Rodzina", german: "die Familie" },
+    { polish: "Matka", german: "die Mutter" },
+    { polish: "Ojciec", german: "der Vater" },
+    { polish: "Syn", german: "der Sohn" },
+    { polish: "Córka", german: "die Tochter" },
+    { polish: "Siostra", german: "die Schwester" },
+    { polish: "Brat", german: "der Bruder" },
+    { polish: "Dziadek", german: "der Großvater" },
+    { polish: "Babcia", german: "die Großmutter" },
+    { polish: "Kuchnia", german: "die Küche" },
+    { polish: "Łazienka", german: "das Badezimmer" },
+    { polish: "Sypialnia", german: "das Schlafzimmer" },
+    { polish: "Salon", german: "das Wohnzimmer" },
+    { polish: "Pokój", german: "das Zimmer" },
+    { polish: "Papier", german: "das Papier" },
+    { polish: "Książka", german: "das Buch" },
+    { polish: "Telefon", german: "das Telefon" },
+    { polish: "Komputer", german: "der Computer" },
+    { polish: "Samolot", german: "das Flugzeug" },
+    { polish: "Pociąg", german: "der Zug" },
+    { polish: "Auto", german: "das Auto" },
+    { polish: "Rowerek", german: "das Fahrrad" },
+    { polish: "Okulary", german: "die Brille" },
+    { polish: "Buty", german: "die Schuhe" },
+    { polish: "Koszulka", german: "das T-Shirt" },
+    { polish: "Sukienka", german: "das Kleid" },
+    { polish: "Spodnie", german: "die Hose" },
+    { polish: "Skarpetki", german: "die Socken" },
+    { polish: "Kapelusz", german: "der Hut" },
+    { polish: "Portfel", german: "die Brieftasche" },
+    { polish: "Torba", german: "die Tasche" },
+    { polish: "Dom", german: "das Haus" },
+    { polish: "Mieszkanie", german: "die Wohnung" },
+    { polish: "Wieżowiec", german: "das Hochhaus" },
+    { polish: "Pensjonat", german: "die Pension" },
+    { polish: "Schody", german: "die Treppe" },
+    { polish: "Winda", german: "der Aufzug" },
+    { polish: "Garaż", german: "die Garage" },
+    { polish: "Dach", german: "das Dach" },
+    { polish: "Ściana", german: "die Wand" },
+    { polish: "Okno", german: "das Fenster" },
+    { polish: "Drzwi", german: "die Tür" },
+    { polish: "Podłoga", german: "der Boden" },
+    { polish: "Sufit", german: "die Decke" },
+    { polish: "Biurko", german: "der Schreibtisch" },
+    { polish: "Krzesło", german: "der Stuhl" },
+    { polish: "Łóżko", german: "das Bett" },
+    { polish: "Sofa", german: "das Sofa" },
+    { polish: "Telewizor", german: "der Fernseher" },
+    { polish: "Lampa", german: "die Lampe" },
+    { polish: "Zegar", german: "die Uhr" },
+    { polish: "Telefon", german: "das Telefon" },
+    { polish: "Klawiatura", german: "die Tastatur" },
+    { polish: "Monitor", german: "der Bildschirm" },
+    { polish: "Myszka", german: "die Maus" },
+    { polish: "Głośniki", german: "die Lautsprecher" },
+    { polish: "Bateria", german: "die Batterie" },
+    { polish: "Kabel", german: "das Kabel" },
+    { polish: "Gniazdko", german: "die Steckdose" },
+    { polish: "Przedłużacz", german: "die Verlängerung" },
+    { polish: "Woda", german: "das Wasser" },
+    { polish: "Sok", german: "der Saft" },
+    { polish: "Kawa", german: "der Kaffee" },
+    { polish: "Herbata", german: "der Tee" },
+    { polish: "Mleko", german: "die Milch" },
+    { polish: "Piwo", german: "das Bier" },
+    { polish: "Wino", german: "der Wein" },
+    { polish: "Sól", german: "das Salz" },
+    { polish: "Cukier", german: "der Zucker" },
+    { polish: "Chleb", german: "das Brot" },
+    { polish: "Masło", german: "die Butter" },
+    { polish: "Ser", german: "der Käse" },
+    { polish: "Jajko", german: "das Ei" },
+    { polish: "Kurczak", german: "das Hähnchen" },
+    { polish: "Wołowina", german: "das Rindfleisch" },
+    { polish: "Wieprzowina", german: "das Schweinefleisch" },
+    { polish: "Ryż", german: "der Reis" },
+    { polish: "Makaron", german: "die Nudeln" },
+    { polish: "Ziemniaki", german: "die Kartoffeln" },
+    { polish: "Marchewka", german: "die Karotte" },
+    { polish: "Pomidor", german: "die Tomate" },
+    { polish: "Ogórek", german: "die Gurke" },
+    { polish: "Cebula", german: "die Zwiebel" },
+    { polish: "Czosnek", german: "der Knoblauch" },
+    { polish: "Papryka", german: "die Paprika" },
+    { polish: "Jabłko", german: "der Apfel" },
+    { polish: "Gruszka", german: "die Birne" },
+    { polish: "Banany", german: "die Bananen" },
+    { polish: "Truskawki", german: "die Erdbeeren" },
+    { polish: "Jagody", german: "die Beeren" },
+    { polish: "Cytryna", german: "die Zitrone" },
+    { polish: "Pomarańcza", german: "die Orange" },
+    { polish: "Winogrona", german: "die Trauben" },
+    { polish: "Banan", german: "die Banane" },
+    { polish: "Herbata", german: "der Tee" },
+    { polish: "Kawa", german: "der Kaffee" },
+    { polish: "Czekolada", german: "die Schokolade" },
+    { polish: "Lody", german: "das Eis" },
+    { polish: "Ciasto", german: "der Kuchen" },
+    { polish: "Ciasteczka", german: "die Kekse" },
+    { polish: "Drożdżówka", german: "der Hefezopf" },
+    { polish: "Ryba", german: "der Fisch" },
+    { polish: "Kurczak", german: "das Hähnchen" },
+    { polish: "Wieprzowina", german: "das Schweinefleisch" },
+    { polish: "Wołowina", german: "das Rindfleisch" },
+    { polish: "Łosoś", german: "der Lachs" },
+    { polish: "Krewetki", german: "die Garnelen" },
+    { polish: "Tuńczyk", german: "der Thunfisch" },
+    { polish: "Oliwa", german: "das Olivenöl" },
+    { polish: "Mąka", german: "das Mehl" },
+    { polish: "Jajka", german: "die Eier" },
+    { polish: "Cukier", german: "der Zucker" },
+    { polish: "Kasza", german: "der Grieß" },
+    { polish: "Dżem", german: "die Marmelade" },
+    { polish: "Sól", german: "das Salz" },
+    { polish: "Pieprz", german: "der Pfeffer" },
+    { polish: "Oregano", german: "der Oregano" },
+    { polish: "Cynamon", german: "der Zimt" },
+    { polish: "Ketchup", german: "der Ketchup" },
+    { polish: "Majonez", german: "die Mayonnaise" },
+    { polish: "Musztarda", german: "der Senf" },
+    { polish: "Sos", german: "die Soße" },
+    { polish: "Owoce", german: "die Früchte" },
+    { polish: "Warzywa", german: "das Gemüse" },
+    { polish: "Mięso", german: "das Fleisch" },
+    { polish: "Nabiał", german: "die Milchprodukte" },
+    { polish: "Pieczywo", german: "die Backwaren" },
+    { polish: "Przyprawy", german: "die Gewürze" },
+    { polish: "Słodycze", german: "die Süßigkeiten" },
+    { polish: "Napoje", german: "die Getränke" },
+                // Tutaj możesz dodać więcej słów do kategorii "Wszystkie"
+            ],
+            Przedmioty: [
+                { polish: "Masło", german: "die Butter" },
+                { polish: "Bułka", german: "das Brötchen" },
+            ],
+            Czasowniki: [
+                { polish: "Kupować", german: "kaufen" },
+                { polish: "Potrzebować", german: "brauchen" },
+    { polish: "Brać", german: "nehmen" },
+    { polish: "Kupować", german: "kaufen" },
+    { polish: "Jść", german: "gehen" },
+    { polish: "Mieć", german: "haben" },
+    { polish: "Być", german: "sein" },
+    { polish: "Pływać", german: "schwimmen" },
+    { polish: "Chcieć", german: "wollen" },
+    { polish: "Lubić", german: "mögen" },
+    { polish: "Rozumieć", german: "verstehen" },
+    { polish: "Robić", german: "machen" },
+    { polish: "Dawać", german: "geben" },
+    { polish: "Pomagać", german: "helfen" },
+    { polish: "Śpiewać", german: "singen" },
+    { polish: "Zaczynać", german: "anfangen" },
+    { polish: "Czytać", german: "lesen" },
+    { polish: "Mówić", german: "sprechen" },
+    { polish: "Myć", german: "waschen" },
+    { polish: "Kochać", german: "lieben" },
+    { polish: "Pić", german: "trinken" },
+    { polish: "Wiedzieć", german: "wissen" },
+    { polish: "Rysować", german: "zeichnen" },
+    { polish: "Gotować", german: "kochen" },
+    { polish: "Zamykać", german: "schließen" },
+    { polish: "Otwierać", german: "öffnen" },
+    { polish: "Zostawać", german: "bleiben" },
+    { polish: "Pisać", german: "schreiben" },
+    { polish: "Znać", german: "kennen" },
+    { polish: "Spotykać", german: "treffen" },
+    { polish: "Tańczyć", german: "tanzen" },
+    { polish: "Opowiadać", german: "erzählen" },
+    { polish: "Siedzieć", german: "sitzen" },
+    { polish: "Kłócić się", german: "streiten" },
+    { polish: "Rozmawiać", german: "reden" },
+    { polish: "Przychodzić", german: "kommen" },
+    { polish: "Czekać", german: "warten" },
+    { polish: "Zaczynać", german: "beginnen" },
+    { polish: "Chodzić", german: "gehen" },
+    { polish: "Wchodzić", german: "eintreten" },
+    { polish: "Biec", german: "rennen" },
+    { polish: "Zapominać", german: "vergessen" },
+    { polish: "Czyścić", german: "putzen" },
+    { polish: "Zgubić", german: "verlieren" },
+    { polish: "Wchodzić", german: "betreten" },
+    { polish: "Słuchać", german: "hören" },
+    { polish: "Kopać", german: "graben" },
+    { polish: "Szedł", german: "ging" },
+    { polish: "Czytał", german: "las" },
+    { polish: "Rozmawiał", german: "sprach" },
+    { polish: "Płakał", german: "weinte" },
+    { polish: "Śpiewał", german: "sang" },
+    { polish: "Siedział", german: "saß" },
+    { polish: "Mył", german: "wusch" },
+    { polish: "Gotował", german: "kochte" },
+    { polish: "Tańczył", german: "tanzte" },
+    { polish: "Rysował", german: "zeichnete" },
+    { polish: "Pisał", german: "schrieb" },
+    { polish: "Spotykał", german: "traf" },
+    { polish: "Mówił", german: "sprach" },
+    { polish: "Brał", german: "nahm" },
+    { polish: "Kupował", german: "kaufte" },
+    { polish: "Dawał", german: "gab" },
+    { polish: "Zamykał", german: "schloss" },
+    { polish: "Otwierał", german: "öffnete" },
+    { polish: "Zostawał", german: "blieb" },
+    { polish: "Kłócił się", german: "stritt" },
+    { polish: "Rozmawiał", german: "redete" },
+    { polish: "Przychodził", german: "kam" },
+    { polish: "Czekał", german: "wartete" },
+    { polish: "Chodził", german: "ging" },
+    { polish: "Biegł", german: "rannte" },
+    { polish: "Zgubił", german: "verlor" },
+    { polish: "Słuchał", german: "hörte" },
+    { polish: "Kopał", german: "grub" },
+            ],
+            Przymiotniki: [
+    { polish: "wielki", german: "groß" },
+    { polish: "mały", german: "klein" },
+    { polish: "nowy", german: "neu" },
+    { polish: "stary", german: "alt" },
+    { polish: "dobry", german: "gut" },
+    { polish: "zły", german: "schlecht" },
+    { polish: "szybki", german: "schnell" },
+    { polish: "wolny", german: "langsam" },
+    { polish: "piękny", german: "schön" },
+    { polish: "brzydki", german: "hässlich" },
+    { polish: "biedny", german: "arm" },
+    { polish: "bogaty", german: "reich" },
+    { polish: "gorący", german: "heiß" },
+    { polish: "zimny", german: "kalt" },
+    { polish: "suchy", german: "trocken" },
+    { polish: "mokry", german: "nass" },
+    { polish: "ciężki", german: "schwer" },
+    { polish: "lekki", german: "leicht" },
+    { polish: "cichy", german: "leise" },
+    { polish: "głośny", german: "laut" },
+    { polish: "tani", german: "billig" },
+    { polish: "drogi", german: "teuer" },
+    { polish: "czysty", german: "sauber" },
+    { polish: "brudny", german: "schmutzig" },
+    { polish: "słodki", german: "süß" },
+    { polish: "kwaśny", german: "sauer" },
+    { polish: "ostry", german: "scharf" },
+    { polish: "mdły", german: "fade" },
+    { polish: "przyjemny", german: "angenehm" },
+    { polish: "nudny", german: "langweilig" },
+    { polish: "interesujący", german: "interessant" },
+    { polish: "trudny", german: "schwierig" },
+    { polish: "łatwy", german: "einfach" },
+    { polish: "cudowny", german: "wunderbar" },
+    { polish: "okropny", german: "furchtbar" },
+    { polish: "szczęśliwy", german: "glücklich" },
+    { polish: "smutny", german: "traurig" },
+    { polish: "zdrowy", german: "gesund" },
+    { polish: "chory", german: "krank" },
+    { polish: "boczny", german: "seitlich" },
+    { polish: "środkowy", german: "mittig" },
+    { polish: "prawy", german: "rechts" },
+    { polish: "lewy", german: "links" },
+    { polish: "blisko", german: "nah" },
+    { polish: "daleko", german: "weit" },
+    { polish: "pełny", german: "voll" },
+    { polish: "pusty", german: "leer" },
+    { polish: "wyspany", german: "ausgeschlafen" },
+    { polish: "zmęczony", german: "müde" },
+    { polish: "niski", german: "niedrig" },
+    { polish: "wysoki", german: "hoch" },
+    { polish: "długi", german: "lang" },
+    { polish: "krótki", german: "kurz" },
+    { polish: "młody", german: "jung" },
+    { polish: "ciepły", german: "warm" },
+    { polish: "chłodny", german: "kühl" },
+    { polish: "luźny", german: "locker" },
+    { polish: "wąski", german: "eng" },
+    { polish: "schmal", german: "schmal" },
+    { polish: "szeroki", german: "breit" },
+    { polish: "jasny", german: "hell" },
+    { polish: "ciemny", german: "dunkel" },
+    { polish: "wesoły", german: "fröhlich" },
+    { polish: "nerwowy", german: "nervös" },
+    { polish: "faul", german: "faul" },
+    { polish: "kruchy", german: "zerbrechlich" },
+            ],
+            Spójniki: [
+    { polish: "Ponieważ", german: "weil" },
+    { polish: "Ale", german: "aber" },
+    { polish: "Lub", german: "oder" },
+    { polish: "I", german: "und" },
+    { polish: "Dlatego", german: "deshalb" },
+    { polish: "Chociaż", german: "obwohl" },
+    { polish: "Jednak", german: "jedoch" },
+    { polish: "Gdy", german: "wenn" },
+    { polish: "Potem", german: "dann" },
+    { polish: "Wcześniej", german: "vorher" },
+    { polish: "Nawet jeśli", german: "selbst wenn" },
+    { polish: "Na przykład", german: "zum Beispiel" },
+    { polish: "Później", german: "später" },
+    { polish: "W końcu", german: "schließlich" },
+    { polish: "Podczas gdy", german: "während" },
+    { polish: "Przed", german: "vor" },
+    { polish: "Po", german: "nach" },
+    { polish: "Tak jak", german: "genauso wie" },
+    { polish: "Zanim", german: "bevor" },
+    { polish: "Naprawdę", german: "wirklich" },
+    { polish: "Jako że", german: "da" },
+    { polish: "Z tego powodu", german: "daher" },
+    { polish: "O ile", german: "sofern" },
+    { polish: "Mimo że", german: "obgleich" },
+    { polish: "W przeciwnym razie", german: "ansonsten" },
+            ],
+            Zdania: [
+    { polish: "Lubię jeść pizzę.", german: "Ich esse gerne Pizza." },
+    { polish: "Gdzie jest toaleta?", german: "Wo ist die Toilette?" },
+    { polish: "Czy możesz mi pomóc?", german: "Kannst du mir helfen?" },
+    { polish: "Jestem zmęczony.", german: "Ich bin müde." },
+    { polish: "Kto to jest?", german: "Wer ist das?" },
+    { polish: "To jest moje auto.", german: "Das ist mein Auto." },
+    { polish: "Kiedy przychodzi pociąg?", german: "Wann kommt der Zug?" },
+    { polish: "Ile to kosztuje?", german: "Wie viel kostet das?" },
+    { polish: "Czy mówisz po angielsku?", german: "Sprichst du Englisch?" },
+    { polish: "Gdzie mieszkasz?", german: "Wo wohnst du?" },
+    { polish: "To jest pyszne.", german: "Das ist lecker." },
+    { polish: "Czy masz rodzeństwo?", german: "Hast du Geschwister?" },
+    { polish: "Jak się masz?", german: "Wie geht es dir?" },
+    { polish: "Jestem na zakupach.", german: "Ich bin einkaufen." },
+    { polish: "Jestem na wakacjach.", german: "Ich bin im Urlaub." },
+    { polish: "Która godzina?", german: "Wie spät ist es?" },
+    { polish: "Co to jest?", german: "Was ist das?" },
+    { polish: "Dlaczego?", german: "Warum?" },
+    { polish: "Gdzie jesteśmy?", german: "Wo sind wir?" },
+    { polish: "Czy to twój telefon?", german: "Ist das dein Handy?" },
+    { polish: "Jestem głodny.", german: "Ich habe Hunger." },
+    { polish: "Jestem spragniony.", german: "Ich habe Durst." },
+    { polish: "To jest bardzo trudne.", german: "Das ist sehr schwer." },
+    { polish: "Lubię podróżować.", german: "Ich reise gerne." },
+    { polish: "Dlaczego to robię?", german: "Warum mache ich das?" },
+    { polish: "Kocham cię.", german: "Ich liebe dich." },
+    { polish: "To jest piękne miejsce.", german: "Das ist ein wunderschöner Ort." },
+    { polish: "Jestem gotowy.", german: "Ich bin bereit." },
+    { polish: "Lubię gotować obiad.", german: "Ich koche gerne das Abendessen." },
+    { polish: "Ona chce tańczyć na przyjęciu.", german: "Sie möchte auf der Party tanzen." },
+    { polish: "On uczy się programować.", german: "Er lernt programmieren." },
+    { polish: "Oni muszą posprzątać pokój.", german: "Sie müssen das Zimmer aufräumen." },
+    { polish: "Ja lubię pływać w morzu.", german: "Ich schwimme gerne im Meer." },
+    { polish: "Ona lubi jeździć na rowerze po parku.", german: "Sie fährt gerne mit dem Fahrrad im Park." },
+    { polish: "Oni zaczynają uczyć się niemieckiego.", german: "Sie fangen an, Deutsch zu lernen." },
+    { polish: "Oni lubią oglądać filmy wieczorem.", german: "Sie sehen gerne abends Filme." },
+    { polish: "Ona próbuje naprawić swój samochód.", german: "Sie versucht, ihr Auto zu reparieren." },
+    { polish: "Oni mogą pomóc w przygotowaniach do imprezy.", german: "Sie können bei den Vorbereitungen für die Party helfen." },
+            ],
+        };
+
+        let currentWordIndex;
+        let correctAnswers = 0;
+        let totalAttempts = 0;
+        let usedWordIndexes = [];
+        let results = [];
+        let words = categories.all; // Rozpoczynamy grę od wszystkich słów
+
+        function getRandomWordIndex() {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * words.length);
+            } while (usedWordIndexes.includes(newIndex));
+            usedWordIndexes.push(newIndex);
+            return newIndex;
+        }
+
+        function displayWord() {
+            currentWordIndex = getRandomWordIndex();
+            const wordElement = document.getElementById("word");
+            wordElement.textContent = words[currentWordIndex].polish;
+            wordElement.classList.add("word-background");
+            document.getElementById("message").textContent = "";
+            document.getElementById("translation").value = "";
+        }
+
+        function changeCategory() {
+            const selectedCategory = document.getElementById("category").value;
+            if (selectedCategory === "all") {
+                words = categories.all;
+            } else {
+                words = categories[selectedCategory];
+            }
+            resetGame();
+        }
+
+        function checkEnter(event) {
+            if (event.key === "Enter") {
+                checkTranslation();
+            }
+        }
+
+        function checkTranslation() {
+            const translation = document.getElementById("translation").value.toLowerCase();
+            totalAttempts++;
+            if (translation === words[currentWordIndex].german.toLowerCase()) {
+                correctAnswers++;
+                results.push({ index: currentWordIndex, attempts: totalAttempts });
+                if (usedWordIndexes.length < words.length) {
+                    displayWord();
+                } else {
+                    showResults();
+                }
+            } else {
+                document.getElementById("message").textContent = `Błędne tłumaczenie. Poprawne to: ${words[currentWordIndex].german}`;
+            }
+        }
+
+        function showResults() {
+            const resultsModal = document.getElementById("results-modal");
+            resultsModal.style.display = "flex";
+        }
+
+        function resetGame() {
+            correctAnswers = 0;
+            totalAttempts = 0;
+            usedWordIndexes = [];
+            results = [];
+            document.getElementById("results-modal").style.display = "none";
+            displayWord();
+        }
+
+        function addSpecialCharacter(character) {
+            const translationInput = document.getElementById("translation");
+            translationInput.value += character;
+        }
+
+        // Inicjalizacja gry
+        resetGame();
+    </script>
+</body>
+</html>
